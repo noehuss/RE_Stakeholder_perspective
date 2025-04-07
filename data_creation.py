@@ -5,17 +5,22 @@ import ast
 wind_condition = pd.read_csv("data/WindForecast_20250301-20250321.csv", sep=';')
 
 wind_condition['DateTime'] = pd.to_datetime(wind_condition['DateTime'], format='%d/%m/%Y %H:%M')
+
 wind_condition['Measured & upscaled [MW]'] = wind_condition['Measured & upscaled [MW]'].astype(str)
-
 wind_condition['Measured & upscaled [MW]'] = wind_condition['Measured & upscaled [MW]'].str.replace(',', '.', regex=False)
-
 wind_condition['Measured & upscaled [MW]'] = wind_condition['Measured & upscaled [MW]'].str.replace(r'[^0-9.]', '', regex=True)
-
 wind_condition['Measured & upscaled [MW]'] = pd.to_numeric(wind_condition['Measured & upscaled [MW]'], errors='coerce')
+
+wind_condition['Monitored Capacity [MW]'] = wind_condition['Monitored Capacity [MW]'].astype(str)
+wind_condition['Monitored Capacity [MW]'] = wind_condition['Monitored Capacity [MW]'].str.replace(',', '.', regex=False)
+wind_condition['Monitored Capacity [MW]'] = wind_condition['Monitored Capacity [MW]'].str.replace(r'[^0-9.]', '', regex=True)
+wind_condition['Monitored Capacity [MW]'] = pd.to_numeric(wind_condition['Monitored Capacity [MW]'], errors='coerce')
+
+wind_condition['Capacity_factor']=wind_condition['Measured & upscaled [MW]']/wind_condition['Monitored Capacity [MW]'] 
 wind_condition['Hour'] = wind_condition['DateTime'].dt.strftime('%d/%m/%Y %H:00')
 wind_condition['Date'] = wind_condition['DateTime'].dt.date
-df_mean = wind_condition.groupby(['Date', 'Hour'])['Measured & upscaled [MW]'].mean().reset_index()
-daily_values = [df_mean[df_mean['Date'] == day]['Measured & upscaled [MW]'].tolist() 
+df_mean = wind_condition.groupby(['Date', 'Hour'])['Capacity_factor'].mean().reset_index()
+daily_values = [df_mean[df_mean['Date'] == day]['Capacity_factor'].tolist() 
                 for day in df_mean['Date'].unique()]
 
 real_time=[]
