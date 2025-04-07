@@ -32,6 +32,8 @@ def scenario_generator() -> pd.DataFrame:
         for j in range (0,24):
             scenario_i.append(np.random.binomial(1,0.5))
         real_time.append(scenario_i)
+    #Value calculated using the function above
+    real_time_calculated = [[1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0], [1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1], [0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1]]
 
     price_1 = [
         128.2, 120.38, 117.09, 112.15, 109.75, 111.89, 117.11, 135.81, 138.82, 137.77,
@@ -174,10 +176,12 @@ def scenario_generator() -> pd.DataFrame:
     row = 0
     for i in daily_values:
         for j in day_ahead:
-            for k in real_time:
-                df_scenario.loc[row, "Wind"] = i
-                df_scenario.loc[row, "Price"] = j
+            for k in real_time_calculated:
+                df_scenario.loc[row, "Wind"] = list(map(lambda x: max(x,0.01),i))
+                df_scenario.loc[row, "Price"] = list(map(lambda x: max(x,0.01),j))
                 df_scenario.loc[row, "System condition"] = k
                 row += 1
-
     return df_scenario
+
+df_scenario = scenario_generator()
+df_scenario.to_csv('test.csv')
