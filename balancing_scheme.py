@@ -1,6 +1,6 @@
 from offering_strategy import OnePriceScheme, TwoPricesScheme
 import pandas as pd
-from data_creation import scenario_generator
+from data.data_creation import scenario_generator
 import matplotlib.pyplot as plt
 
 df_scenario = scenario_generator()
