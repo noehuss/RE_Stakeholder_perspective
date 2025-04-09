@@ -57,15 +57,21 @@ class OfferingStrategy():
                                         sense=maximize)
 
     def get_profit_distribution(self, plot:bool=False) -> pd.DataFrame:
-        profit = pd.DataFrame(index=self.model.scenarios, columns=[t for t in self.model.hours])
+        profit = pd.DataFrame(index=self.model.scenarios, columns=["Expected profit"])
         for s in self.model.scenarios:
+            hourly_profit = []
             for t in self.model.hours:
-                profit.loc[s, t] = value(self._profit(s,t))
+                hourly_profit.append(value(self._profit(s,t)))
+            profit.loc[s, "Expected profit"] = sum(hourly_profit)
+
         if plot:
-            profit[0].hist(cumulative=True, density=1, bins=100, grid=False)
+            profit["Expected profit"].hist(cumulative=True, density=1, bins=100, grid=False)
             plt.show()
         return profit
     
+    def get_average_profit(self):
+        return value(self.model.objective)
+
     def get_p_DA(self):
         return [value(self.model.p_DA[t]) for t in self.model.hours]
     
