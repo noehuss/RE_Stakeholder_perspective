@@ -8,6 +8,7 @@ Pnom = 500
 nb_hours = 24
 scenario_df = scenario_generator()
 
+scheme = "two"
 scenario_df = scenario_df.sample(frac=1).reset_index(drop=True)
 
 average_expected_profit = {}
@@ -16,8 +17,11 @@ key = 1
 for in_sample in np.array_split(scenario_df, 8):
   assert len(in_sample) == len(scenario_df) / 8
   in_sample = pd.DataFrame(in_sample)
-  one_price = OnePriceScheme(nb_hours, in_sample, Pnom=Pnom)
-  p_DA = one_price.get_p_DA()
+  if scheme == "one":
+    model = OnePriceScheme(nb_hours, in_sample, Pnom=Pnom)
+  else:
+    model = TwoPricesScheme(nb_hours, in_sample, Pnom=Pnom)
+  p_DA = model.get_p_DA()
   out_sample = scenario_df.drop(index=in_sample.index)
   p_DA_df[f"p_DA_{key}"] = p_DA
   # Profit day ahead
@@ -30,16 +34,24 @@ for in_sample in np.array_split(scenario_df, 8):
   out_sample["Imbalance up"] = out_sample["Imbalance"].map(lambda y: list(map(lambda x: max(x,0),y))) #Two prices
   out_sample["Imbalance down"] = out_sample["Imbalance"].map(lambda y: list(map(lambda x: -min(x,0),y))) #Two prices
 
-  for i, row in out_sample.iterrows():
-    price = np.multiply(row["Price"], np.add(np.multiply(1.25, row["System condition"]),np.multiply(0.85, np.subtract(1, row["System condition"]))))
-    out_sample.loc[i, "Imbalance cost"] = sum(np.multiply(row["Imbalance"], price))
+  if scheme == "one":
+    for i, row in out_sample.iterrows():
+      price = np.multiply(row["Price"], np.add(np.multiply(1.25, row["System condition"]),np.multiply(0.85, np.subtract(1, row["System condition"]))))
+      out_sample.loc[i, "Imbalance cost"] = sum(np.multiply(row["Imbalance"], price))
+  else:
+    for i, row in out_sample.iterrows():
+      deficit = np.multiply(row["System condition"], np.subtract(row["Imbalance up"], np.multiply(1.25, row["Imbalance down"])))
+      excess = np.multiply(np.subtract(1, row["System condition"]), np.subtract(np.multiply(0.85, row["Imbalance up"]), row["Imbalance down"]))
+      imbalance_cost = np.multiply(row["Price"], np.add(deficit, excess)) 
+      out_sample.loc[i, "Imbalance cost"] = sum(imbalance_cost)
+  
   out_sample["Profit"] = out_sample["DA profit"] + out_sample["Imbalance cost"]
 
   average_expected_profit[key] = {
     "out_sample" : out_sample["Profit"].mean(),
-    "in_sample" : one_price.get_average_profit()    
+    "in_sample" : model.get_average_profit()    
   }
-  profit_one_price = one_price.get_profit_distribution()
+  profit_one_price = model.get_profit_distribution()
   # plt.hist(cumulative=True, x=profit_one_price["Expected profit"], density=True, bins=100, alpha=0.5, label='in sample')
   # plt.hist(cumulative=True, x=out_sample["Profit"], density=True, bins=100, alpha=0.5, label='out sample')
   # plt.legend()
