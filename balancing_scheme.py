@@ -9,12 +9,10 @@ P_nom = 500
 nb_hours = 24
 
 OnePrice = OnePriceScheme(T=nb_hours, scenarios=df_scenario[0:200], Pnom=P_nom)
-OnePrice.solve_model()
 profit_one_price = OnePrice.get_profit_distribution()
 OnePrice.model.p_DA.pprint()
 
 TwoPrice = TwoPricesScheme(T=nb_hours, scenarios=df_scenario[0:200], Pnom=P_nom)
-TwoPrice.solve_model()
 profit_two_price = TwoPrice.get_profit_distribution()
 TwoPrice.model.p_DA.pprint()
 

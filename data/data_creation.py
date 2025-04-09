@@ -162,16 +162,6 @@ def scenario_generator() -> pd.DataFrame:
         price_19, price_20
     ]
 
-    # scenario= []
-    # for i in daily_values:
-    #     for j in day_ahead:
-    #         for k in real_time:
-    #             scenario.append(i + j + k)
-
-    # df_scenario = pd.DataFrame(scenario)
-
-    # df_scenario.to_csv("data/scenario.csv")
-
     df_scenario = pd.DataFrame(columns=["Wind", "Price", "System condition"])
     row = 0
     for i in daily_values:
@@ -181,4 +171,6 @@ def scenario_generator() -> pd.DataFrame:
                 df_scenario.loc[row, "Price"] = list(map(lambda x: max(x,0.01),j))
                 df_scenario.loc[row, "System condition"] = k
                 row += 1
+
+    df_scenario = df_scenario.astype('object')
     return df_scenario

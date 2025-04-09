@@ -11,6 +11,8 @@ class OfferingStrategy():
         self.Pnom = Pnom
         self.nb_scenarios = len(scenarios)
 
+        self.solve_model()
+
     def indexes(self):
         self.model.hours = RangeSet(0, self.T-1) # 1 to T
         self.model.scenarios = Set(initialize=self.scenarios.index)
@@ -64,6 +66,9 @@ class OfferingStrategy():
             plt.show()
         return profit
     
+    def get_p_DA(self):
+        return [value(self.model.p_DA[t]) for t in self.model.hours]
+    
 
 class OnePriceScheme(OfferingStrategy):
     def _profit(self, s:int, t:int):
@@ -88,3 +93,4 @@ class TwoPricesScheme(OfferingStrategy):
             return self.model.price[(s,t)]*(self.model.p_DA[(t)]+
                                             (self.model.sys_condition[(s,t)]*(self.model.delta_up[(s,t)]-1.25*self.model.delta_down[(s,t)])
                                             +(1-self.model.sys_condition[(s,t)])*(0.85*self.model.delta_up[(s,t)]-self.model.delta_down[(s,t)]))) 
+
