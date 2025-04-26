@@ -2,6 +2,9 @@ from pyomo.environ import *
 import pandas as pd
 import matplotlib.pyplot as plt
 from pyomo.contrib.iis import write_iis
+import numpy as np
+import param
+
 
 class OfferingStrategy():
     def __init__(self, T:int,  scenarios:pd.DataFrame, Pnom:int):
@@ -56,7 +59,7 @@ class OfferingStrategy():
                                                          for s in self.model.scenarios ) for t in self.model.hours), 
                                         sense=maximize)
 
-    def get_profit_distribution(self, plot:bool=False) -> pd.DataFrame:
+    def get_profit_distribution(self, plot:bool=False, color:str=None) -> pd.DataFrame:
         profit = pd.DataFrame(index=self.model.scenarios, columns=["Expected profit"])
         for s in self.model.scenarios:
             hourly_profit = []
@@ -65,7 +68,11 @@ class OfferingStrategy():
             profit.loc[s, "Expected profit"] = sum(hourly_profit)
 
         if plot:
-            profit["Expected profit"].hist(cumulative=True, density=1, bins=100, grid=False)
+            plt.hist(cumulative=True, x=profit["Expected profit"], density=True, bins=100, alpha=0.5, label='Profit distribution', color=color)
+            plt.axvline(self.get_average_profit(), color=color, linestyle='--', label='Expected profit')
+            plt.xlabel("Profit")
+            plt.ylabel("Probability")
+            plt.legend()
             plt.show()
         return profit
     
@@ -75,6 +82,28 @@ class OfferingStrategy():
     def get_p_DA(self):
         return [value(self.model.p_DA[t]) for t in self.model.hours]
     
+    def system_condition_distribution(self):
+        sys_cond = [np.mean([value(self.model.sys_condition[(s, t)]) for s in self.model.scenarios]) for t in self.model.hours]
+        full_bid = np.multiply(1.25, sys_cond)
+        zero_bid = np.multiply(0.85, np.subtract(1, sys_cond))
+        diff_bid = np.subtract(full_bid, zero_bid)
+
+        p_DA = self.get_p_DA()
+        print(p_DA)
+        time = [t for t in self.model.hours]
+        print(time)
+        fig, ax1 = plt.subplots()
+
+        ax2 = ax1.twinx()
+        ax1.step(x=time, y=p_DA, color=param.colors[1], where='post')
+        ax2.step(x=time, y=diff_bid, color=param.colors[2], where='post')
+        ax1.set_xlabel('Hours')
+        ax1.set_ylabel('Production offered', color=param.colors[1])
+        ax2.set_ylabel('System status ', color=param.colors[2])
+        ax1.set_ylim((-10,510))
+        ax2.set_ylim((-1,1))
+        ax2.axhline(0, color=param.colors[2], linestyle='--')
+        plt.show()
 
 class OnePriceScheme(OfferingStrategy):
     def _profit(self, s:int, t:int):
