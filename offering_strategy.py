@@ -34,9 +34,14 @@ class OfferingStrategy():
             return model.delta[(s,h)] == model.wind[(s,h)]*self.Pnom - model.p_DA[h]
         self.model.imbalance = Constraint (self.model.scenarios, self.model.hours, rule = rule_imbalance) 
 
-    def objective_function(self):
+    def _profit(self, s:int, t:int):
         pass
 
+    def objective_function(self):
+        self.model.objective = Objective(expr = (1/self.nb_scenarios)*sum(sum( self._profit(s,t)
+                                                         for s in self.model.scenarios ) for t in self.model.hours), 
+                                        sense=maximize)
+        
     def solve_model(self):
         self.indexes()
         self.parameters()
@@ -50,14 +55,6 @@ class OfferingStrategy():
         # Solve the model
         solution = solver.solve(self.model, tee=True)
         #self.model.write("model.lp")
-
-    def _profit(self, s:int, t:int):
-        pass
-
-    def objective_function(self):
-        self.model.objective = Objective(expr = (1/self.nb_scenarios)*sum(sum( self._profit(s,t)
-                                                         for s in self.model.scenarios ) for t in self.model.hours), 
-                                        sense=maximize)
 
     def get_profit_distribution(self, plot:bool=False, color:str=None) -> pd.DataFrame:
         profit = pd.DataFrame(index=self.model.scenarios, columns=["Expected profit"])
@@ -105,27 +102,78 @@ class OfferingStrategy():
         ax2.axhline(0, color=param.colors[2], linestyle='--')
         plt.show()
 
+class OfferingStrategyRisk(OfferingStrategy):
+    def __init__(self, T, scenarios, Pnom, beta, alpha):
+        self.beta = beta
+        self.alpha = alpha
+        super().__init__(T, scenarios, Pnom)
+        print(self)
+
+    def variables(self):
+        super().variables()
+        self.model.VaR = Var(domain = Reals, name = 'VaR')
+        self.model.eta = Var(self.model.scenarios, domain = NonNegativeReals, name = 'eta')
+
+    def constraints(self):
+        super().constraints()
+        def inequality_eta (model, s):
+            return model.eta[s] >= model.VaR - sum(self._profit(s,t) for t in model.hours)
+        self.model.constraint_eta = Constraint(self.model.scenarios, rule = inequality_eta)
+
+    def objective_function(self):
+        self.model.objective = Objective(expr = ((1-self.beta)*(1/self.nb_scenarios)*sum(sum( self._profit(s,t)
+                                                for s in self.model.scenarios) for t in self.model.hours)+
+                                                self.beta*(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))), 
+                                        sense=maximize)
+        
+    def get_expected_profit(self):
+        return value((1/self.nb_scenarios)*sum(sum( self._profit(s,t) for s in self.model.scenarios) for t in self.model.hours))
+
+    def get_CVaR(self):
+        return value(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))
+    
 class OnePriceScheme(OfferingStrategy):
     def _profit(self, s:int, t:int):
         return self.model.price[(s,t)]*(self.model.p_DA[(t)]+self.model.delta[(s,t)]*
                                                         (0.85*(1-self.model.sys_condition[(s,t)])
                                                         +1.25*self.model.sys_condition[(s,t)]))
 
+class OnePriceSchemeRisk(OfferingStrategyRisk):
+    def _profit(self, s:int, t:int):
+        return self.model.price[(s,t)]*(self.model.p_DA[(t)]+self.model.delta[(s,t)]*
+                                                        (0.85*(1-self.model.sys_condition[(s,t)])
+                                                        +1.25*self.model.sys_condition[(s,t)]))
 
 class TwoPricesScheme(OfferingStrategy):
-        def variables(self):
-            super().variables()
-            self.model.delta_up = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaUp")
-            self.model.delta_down = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaDown")
+    def variables(self):
+        super().variables()
+        self.model.delta_up = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaUp")
+        self.model.delta_down = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaDown")
 
-        def constraints(self):
-            super().constraints()
-            def equality_delta (model, s , h):
-                return model.delta[(s,h)] == model.delta_up[(s,h)] - model.delta_down[(s,h)]
-            self.model.def_delta = Constraint (self.model.scenarios, self.model.hours, rule = equality_delta)
+    def constraints(self):
+        super().constraints()
+        def equality_delta (model, s , h):
+            return model.delta[(s,h)] == model.delta_up[(s,h)] - model.delta_down[(s,h)]
+        self.model.def_delta = Constraint(self.model.scenarios, self.model.hours, rule = equality_delta)
 
-        def _profit(self, s:int , t:int):
-            return self.model.price[(s,t)]*(self.model.p_DA[(t)]+
-                                            (self.model.sys_condition[(s,t)]*(self.model.delta_up[(s,t)]-1.25*self.model.delta_down[(s,t)])
-                                            +(1-self.model.sys_condition[(s,t)])*(0.85*self.model.delta_up[(s,t)]-self.model.delta_down[(s,t)]))) 
+    def _profit(self, s:int , t:int):
+        return self.model.price[(s,t)]*(self.model.p_DA[(t)]+
+                                        (self.model.sys_condition[(s,t)]*(self.model.delta_up[(s,t)]-1.25*self.model.delta_down[(s,t)])
+                                        +(1-self.model.sys_condition[(s,t)])*(0.85*self.model.delta_up[(s,t)]-self.model.delta_down[(s,t)]))) 
 
+class TwoPricesSchemeRisk(OfferingStrategyRisk):
+    def variables(self):
+        super().variables()
+        self.model.delta_up = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaUp")
+        self.model.delta_down = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaDown")
+
+    def constraints(self):
+        super().constraints()
+        def equality_delta (model, s , h):
+            return model.delta[(s,h)] == model.delta_up[(s,h)] - model.delta_down[(s,h)]
+        self.model.def_delta = Constraint (self.model.scenarios, self.model.hours, rule = equality_delta)
+
+    def _profit(self, s:int , t:int):
+        return self.model.price[(s,t)]*(self.model.p_DA[(t)]+
+                                        (self.model.sys_condition[(s,t)]*(self.model.delta_up[(s,t)]-1.25*self.model.delta_down[(s,t)])
+                                        +(1-self.model.sys_condition[(s,t)])*(0.85*self.model.delta_up[(s,t)]-self.model.delta_down[(s,t)]))) 
