@@ -125,13 +125,16 @@ class OfferingStrategyRisk(OfferingStrategy):
                                                 for s in self.model.scenarios) for t in self.model.hours)+
                                                 self.beta*(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))), 
                                         sense=maximize)
-        
+
     def get_expected_profit(self):
         return value((1/self.nb_scenarios)*sum(sum( self._profit(s,t) for s in self.model.scenarios) for t in self.model.hours))
 
     def get_CVaR(self):
         return value(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))
     
+    def get_VaR(self):
+        return value(self.model.VaR)
+
 class OnePriceScheme(OfferingStrategy):
     def _profit(self, s:int, t:int):
         return self.model.price[(s,t)]*(self.model.p_DA[(t)]+self.model.delta[(s,t)]*

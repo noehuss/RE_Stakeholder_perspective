@@ -173,5 +173,5 @@ def scenario_generator() -> pd.DataFrame:
                 row += 1
 
     df_scenario = df_scenario.astype('object')
-    df_scenario = df_scenario.sample(frac=1).reset_index(drop=True)
+    df_scenario = df_scenario.sample(frac=1).reset_index(drop=True) #shuffle
     return df_scenario
