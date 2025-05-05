@@ -99,10 +99,12 @@ def plot_overbid(c_up, scenarios):
     freq = []
     for scenario in scenarios:
         count_overbid = sum(1 for i in scenario if i < c_up)
-        freq.append(count_overbid/len(scenario))
-    plt.hist(freq, density=True, bins=60)
-    plt.axvline(0.1, linestyle='--', color='green', label='P90 requirement')
-    plt.axvline(np.mean(freq), linestyle='--', color='red', label=f'mean = {np.mean(freq)*100:.2f} %')
+        freq.append(100*count_overbid/len(scenario))
+    plt.hist(freq, density=True, bins=60, color=param.colors[0])
+    plt.axvline(10, linestyle='--', color=param.colors[1], label='P90 requirement (10%)')
+    plt.axvline(np.mean(freq), linestyle='--', color=param.colors[2], label=f'mean = {np.mean(freq):.2f} %')
+    plt.xlabel('Frequency of overbid (%)')
+    plt.ylabel('Count of minutes')
     plt.legend()
     plt.show()
 
