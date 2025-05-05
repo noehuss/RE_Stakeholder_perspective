@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from data.data_creation import scenario_generator
-from offering_strategy import OnePriceScheme, TwoPricesScheme, OfferingStrategy
+from offering_strategy import OnePriceScheme, TwoPriceScheme, OfferingStrategy
 import matplotlib.pyplot as plt
 import param
 

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from pyomo.contrib.iis import write_iis
 import numpy as np
 import param
-
+import time
 
 class OfferingStrategy():
     def __init__(self, T:int,  scenarios:pd.DataFrame, Pnom:int):
@@ -13,8 +13,9 @@ class OfferingStrategy():
         self.scenarios = scenarios
         self.Pnom = Pnom
         self.nb_scenarios = len(scenarios)
-
+        self.start = time.time() # time at the beginning of our simulation
         self.solve_model()
+        self.execution_time = time.time() - self.start # execution  time, seconds
 
     def indexes(self):
         self.model.hours = RangeSet(0, self.T-1) # 1 to T
@@ -147,7 +148,7 @@ class OnePriceSchemeRisk(OfferingStrategyRisk):
                                                         (0.85*(1-self.model.sys_condition[(s,t)])
                                                         +1.25*self.model.sys_condition[(s,t)]))
 
-class TwoPricesScheme(OfferingStrategy):
+class TwoPriceScheme(OfferingStrategy):
     def variables(self):
         super().variables()
         self.model.delta_up = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaUp")
@@ -164,7 +165,7 @@ class TwoPricesScheme(OfferingStrategy):
                                         (self.model.sys_condition[(s,t)]*(self.model.delta_up[(s,t)]-1.25*self.model.delta_down[(s,t)])
                                         +(1-self.model.sys_condition[(s,t)])*(0.85*self.model.delta_up[(s,t)]-self.model.delta_down[(s,t)]))) 
 
-class TwoPricesSchemeRisk(OfferingStrategyRisk):
+class TwoPriceSchemeRisk(OfferingStrategyRisk):
     def variables(self):
         super().variables()
         self.model.delta_up = Var(self.model.scenarios, self.model.hours, domain = NonNegativeReals, name="DeltaUp")
