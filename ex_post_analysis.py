@@ -4,6 +4,8 @@ from data.data_creation import scenario_generator
 from offering_strategy import OnePriceScheme, TwoPricesScheme, OfferingStrategy
 import matplotlib.pyplot as plt
 import param
+# setting font size
+plt.rcParams.update({'font.size': param.fontsize})
 
 def out_sample_analysis(offering_strategy:OfferingStrategy, Pnom, nb_hours) -> pd.DataFrame | pd.DataFrame:
   scenario_df = scenario_generator()

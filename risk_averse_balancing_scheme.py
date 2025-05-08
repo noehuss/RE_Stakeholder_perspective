@@ -4,6 +4,8 @@ from data.data_creation import scenario_generator
 import matplotlib.pyplot as plt
 import param
 import numpy as  np
+# setting font size
+plt.rcParams.update({'font.size': param.fontsize})
 
 df_scenario = scenario_generator()
 

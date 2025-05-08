@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from pyomo.contrib.iis import write_iis
 import numpy as np
 import param
-
+# setting font size
+plt.rcParams.update({'font.size': param.fontsize})
 
 class OfferingStrategy():
     def __init__(self, T:int,  scenarios:pd.DataFrame, Pnom:int):

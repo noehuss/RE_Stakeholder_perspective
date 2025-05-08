@@ -5,7 +5,8 @@ from pyomo.contrib.iis import write_iis
 import numpy as np
 import param
 import data.generation_scen_task2 as g
-
+# setting font size
+plt.rcParams.update({'font.size': param.fontsize})
 
 class OptimalReserveCapacity():
     def __init__(self, scenarios:list[list[float]],T=24, P=0.9):
@@ -100,11 +101,13 @@ def plot_overbid(c_up, scenarios):
     for scenario in scenarios:
         count_overbid = sum(1 for i in scenario if i < c_up)
         freq.append(100*count_overbid/len(scenario))
+    plt.figure(figsize=(10, 6))
     plt.hist(freq, density=True, bins=60, color=param.colors[0])
     plt.axvline(10, linestyle='--', color=param.colors[1], label='P90 requirement (10%)')
     plt.axvline(np.mean(freq), linestyle='--', color=param.colors[2], label=f'mean = {np.mean(freq):.2f} %')
     plt.xlabel('Frequency of overbid (%)')
     plt.ylabel('Count of minutes')
+    plt.grid(linestyle='--', linewidth=0.4)
     plt.legend()
     plt.show()
 
