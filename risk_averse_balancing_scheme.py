@@ -17,7 +17,7 @@ def risk_averse(Scheme:OfferingStrategyRisk)->pd.DataFrame|dict:
     df = pd.DataFrame(columns=['beta', 'exp profit', 'CVaR', 'VaR'])
     profit_distributions = {}
     VaRs = {}
-    for row, beta in enumerate(np.linspace(0,1,11)):
+    for row, beta in enumerate(np.linspace(0,1,6)):
         PriceScheme = Scheme(T=nb_hours, scenarios=df_scenario[0:200], Pnom=P_nom, beta=beta, alpha=alpha)
         df.loc[row, 'beta'] = beta
         df.loc[row, 'exp profit'] = PriceScheme.get_expected_profit()/1000
@@ -47,18 +47,19 @@ fig, ax = plt.subplots()
 
 for i, (beta, item) in enumerate(profit_distribution_two_price.items()):
     # Plot one price and two price comulative distribution profit
-    #plt.hist(cumulative=True, x=item["Expected profit"], density=True, histtype="step", bins=500, alpha=1, label=f'$beta$={beta}')
-    #plt.axhline(VaRs_two_price[beta], linestyle='--')
-    bins=10
-    item = item[pd.qcut(item['Expected profit'], bins,  labels=range(bins)).eq(0)]
-    print(item)
-    list = item["Expected profit"]/1000 #k€
-    bplot = ax.boxplot(list, positions=[i+1], patch_artist=False, tick_labels=[f"{beta:.1f}"], showmeans=True)
+    plt.hist(cumulative=True, x=item["Expected profit"], density=True, histtype="step", bins=500, alpha=1, label=f'$beta$={beta:.2f}')
+    #plt.axvline(VaRs_two_price[beta], linestyle='--')
+    # bins=10
+    # item = item[pd.qcut(item['Expected profit'], bins,  labels=range(bins)).eq(0)]
+    # print(item)
+    # list = item["Expected profit"]/1000 #k€
+    # bplot = ax.boxplot(list, positions=[i+1], patch_artist=False, tick_labels=[f"{beta:.1f}"], showmeans=True)
+
 plt.xlabel('beta')
 plt.ylabel('Expected profit (k€)')
 
 #plt.axvline(1-alpha, linestyle='--', color='black')
-#plt.legend()
+plt.legend()
 plt.show()
 
 print(VaRs_two_price)

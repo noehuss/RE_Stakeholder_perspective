@@ -96,20 +96,24 @@ class AlsoX(OptimalReserveCapacity):
         self.model.constraint_q = Constraint(rule=rule_q)
 
 
-def plot_overbid(c_up, scenarios):
+def plot_freq_overbid(c_up, scenarios):
     freq = []
     for scenario in scenarios:
-        count_overbid = sum(1 for i in scenario if i < c_up)
+        count_overbid = sum([1 for i in scenario if i < c_up])
         freq.append(100*count_overbid/len(scenario))
-    plt.figure(figsize=(10, 6))
-    plt.hist(freq, density=True, bins=60, color=param.colors[0])
-    plt.axvline(10, linestyle='--', color=param.colors[1], label='P90 requirement (10%)')
-    plt.axvline(np.mean(freq), linestyle='--', color=param.colors[2], label=f'mean = {np.mean(freq):.2f} %')
-    plt.xlabel('Frequency of overbid (%)')
-    plt.ylabel('Count of minutes')
-    plt.grid(linestyle='--', linewidth=0.4)
-    plt.legend()
+    ax = plt.subplot()
+    ax.hist(freq, density=False, bins=61, color=param.colors[0], align='mid')
+    print(sorted(freq))
+    ax.axvline(10, linestyle='--', color=param.colors[1], label='P90 requirement (10%)')
+    ax.axvline(np.mean(freq), linestyle='--', color=param.colors[2], label=f'mean = {np.mean(freq):.2f} %')
+    ax.set(xlabel='Frequency of overbid (%)', ylabel='Count of scenarios')
+    bbox = dict(boxstyle='round', fc=param.colors[2], ec=param.colors[2], alpha=0.5)
+    ax.text(0.95, 0.07, f'Bid: {c_up:.2f} kW', fontsize=16, bbox=bbox,
+            transform=ax.transAxes, horizontalalignment='right')
+    ax.grid(linestyle='--', linewidth=0.4)
+    ax.legend()
     plt.show()
+
 
 
 scenarios = g.generate_scenarios()        
@@ -123,7 +127,7 @@ cvar.solve_model()
 print(alsoX.return_c_up())        
 print(cvar.return_c_up())
 
-plot_overbid(alsoX.return_c_up(), scenarios[:100])
-plot_overbid(alsoX.return_c_up(), scenarios[100:300])
-plot_overbid(cvar.return_c_up(), scenarios[:100])
-plot_overbid(cvar.return_c_up(), scenarios[100:300])
+plot_freq_overbid(alsoX.return_c_up(), scenarios[:100])
+plot_freq_overbid(alsoX.return_c_up(), scenarios[100:300])
+plot_freq_overbid(cvar.return_c_up(), scenarios[:100])
+plot_freq_overbid(cvar.return_c_up(), scenarios[100:300])
