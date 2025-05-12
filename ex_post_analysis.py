@@ -7,15 +7,15 @@ import param
 # setting font size
 plt.rcParams.update({'font.size': param.fontsize})
 
-def out_sample_analysis(offering_strategy:OfferingStrategy, Pnom, nb_hours) -> pd.DataFrame | pd.DataFrame:
+def out_sample_analysis(offering_strategy:OfferingStrategy, Pnom, nb_hours, nb_split) -> pd.DataFrame | pd.DataFrame:
   scenario_df = scenario_generator()
   scenario_df = scenario_df.sample(frac=1).reset_index(drop=True)
 
   average_expected_profit = {}
   p_DA_df = pd.DataFrame()
   key = 1
-  for in_sample in np.array_split(scenario_df, 8):
-    assert len(in_sample) == len(scenario_df) / 8
+  for in_sample in np.array_split(scenario_df, nb_split):
+    assert len(in_sample) == len(scenario_df) / nb_split
     in_sample = pd.DataFrame(in_sample)
     model = offering_strategy(nb_hours, in_sample, Pnom)
     p_DA = model.get_p_DA()
@@ -59,17 +59,18 @@ def out_sample_analysis(offering_strategy:OfferingStrategy, Pnom, nb_hours) -> p
 
 Pnom = 500
 nb_hours = 24
-offering_strategy = OnePriceScheme
+offering_strategy = TwoPricesScheme
 
-average_expected_profit_df, p_DA_df = out_sample_analysis(offering_strategy, Pnom, nb_hours)
+average_expected_profit_df_8, p_DA_df_8 = out_sample_analysis(offering_strategy, Pnom, nb_hours, 8)
+average_expected_profit_df_4, p_DA_df_4 = out_sample_analysis(offering_strategy, Pnom, nb_hours, 4)
 
-print(average_expected_profit_df)
-print(average_expected_profit_df.describe())
-print(p_DA_df)
-print(p_DA_df.transpose().describe())
-plt.plot(average_expected_profit_df['in_sample'], color=param.colors[1], label='In sample', marker='o')
-plt.plot(average_expected_profit_df['out_sample'], color=param.colors[2], label='Out sample', marker='^')
-plt.axhline(average_expected_profit_df['in_sample'].mean(), color=param.colors[1], linestyle='--', label='Mean In sample')
-plt.axhline(average_expected_profit_df['out_sample'].mean(), color=param.colors[2], linestyle=':', label='Mean Out sample')
+print(average_expected_profit_df_8)
+print(average_expected_profit_df_8.describe())
+print(p_DA_df_8)
+print(p_DA_df_8.transpose().describe())
+plt.plot(average_expected_profit_df_8['in_sample'], color=param.colors[1], label='In sample', marker='o')
+plt.plot(average_expected_profit_df_8['out_sample'], color=param.colors[2], label='Out sample', marker='^')
+plt.axhline(average_expected_profit_df_8['in_sample'].mean(), color=param.colors[1], linestyle='--', label='Mean In sample')
+plt.axhline(average_expected_profit_df_8['out_sample'].mean(), color=param.colors[2], linestyle=':', label='Mean Out sample')
 plt.legend()
 plt.show()
