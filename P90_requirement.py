@@ -96,7 +96,7 @@ class AlsoX(OptimalReserveCapacity):
         self.model.constraint_q = Constraint(rule=rule_q)
 
 
-def plot_freq_overbid(c_up, scenarios):
+def plot_overbid(c_up, scenarios):
     freq = []
     for scenario in scenarios:
         count_overbid = sum([1 for i in scenario if i < c_up])
@@ -114,20 +114,99 @@ def plot_freq_overbid(c_up, scenarios):
     ax.legend()
     plt.show()
 
+def plot_shortfall(c_up, scenarios):
+    shortfall_per_hour = []
+    for scenario in scenarios:
+        quantity_shortfall = sum (c_up - i for i in scenario if i < c_up)
+        shortfall_per_hour.append(quantity_shortfall)
+    plt.figure(figsize=(10, 6))
+    plt.axvline(np.mean(shortfall_per_hour), linestyle = '--', label = f'Mean shortfall: {np.mean(shortfall_per_hour):.2f} kW')
+    plt.hist(shortfall_per_hour, density = True, bins = 100)
+    plt.show()
+
+def plot_distrib(loads_list, alsox_bid, cvar_bid):
+    distrib = []
+    for loads in loads_list:
+        distrib += loads
+    #print(distrib)
+    #calculate deciles of data
+    decile = np.percentile(distrib, np.arange(0, 100, 10))
+
+    plt.axvline(alsox_bid, color = param.colors[1], linestyle = '--', label = f'ALSO-X bid: {alsox_bid} kW')
+    plt.axvline(cvar_bid, color = param.colors[3], linestyle = '--', label = f'CVaR bid: {cvar_bid:.1f} kW')
+    plt.axvline(decile[1], color = param.colors[2], linestyle = '--', label = f'First decile: {decile[1]} kW')
+    plt.hist(distrib, bins=50, color = param.colors[0], density=True)
+    plt.xlabel('Load (kW)')
+    plt.ylabel('Probability density')
+    plt.legend()
+    plt.show()
+
+def plot_shortfall(c_up, scenarios):
+    shortfall_per_hour = []
+    for scenario in scenarios:
+        quantity_shortfall = sum (c_up - i for i in scenario if i < c_up)
+        shortfall_per_hour.append(quantity_shortfall/60)
+
+    plt.figure(figsize=(10, 6))
+    plt.axvline(np.mean(shortfall_per_hour), linestyle = '--', label = f'Mean shortfall: {np.mean(shortfall_per_hour):.2f} kW')
+    plt.hist(shortfall_per_hour, density = True, bins = 100)
+    plt.show()
+
+
+def plot_distrib(loads_list, alsox_bid, cvar_bid):
+    distrib = []
+    for loads in loads_list:
+        distrib += loads
+    #print(distrib)
+    #calculate deciles of data
+    decile = np.percentile(distrib, np.arange(0, 100, 10))
+
+    plt.axvline(alsox_bid, color = param.colors[1], linestyle = '--', label = f'ALSO-X bid: {alsox_bid} kW')
+    plt.axvline(cvar_bid, color = param.colors[3], linestyle = '--', label = f'CVaR bid: {cvar_bid:.1f} kW')
+    plt.axvline(decile[1], color = param.colors[2], linestyle = '--', label = f'First decile: {decile[1]} kW')
+    plt.hist(distrib, bins=50, color = param.colors[0], density=True)
+    plt.xlabel('Load (kW)')
+    plt.ylabel('Probability density')
+    plt.legend()
+    plt.show()
+
+def plot_requirement_impact_expected_shortfall(requirement:list[int]):
+    in_sample = scenarios[:100]
+    out_sample = scenarios[100:300]
+    results = {}
+    c_up_results = []
+    ax = plt.subplot()
+    for (i, p) in enumerate(requirement):
+        alsoX = AlsoX(scenarios=in_sample, P=p)
+        alsoX.solve_model()
+        results[f'P{i*100:.0f}'] = []
+        c_up = alsoX.return_c_up()
+        c_up_results.append(c_up)
+        for scenario in out_sample:
+            results[f'P{i*100:.0f}'].append(sum([(c_up - i)/60 for i in scenario if i < c_up]))
+        bplot = ax.boxplot(results[f'P{i*100:.0f}'], positions=[i+1], patch_artist=False, tick_labels=[f"P{p*100:.0f}"], showmeans=True)
+    ax.set(xlabel='Requirement', ylabel='Expected reserve shortfall (kWh)')
+    ax.grid(linestyle='--', linewidth=0.4)
+    plt.show()
+    print(c_up_results)
 
 
 scenarios = g.generate_scenarios()        
 
-alsoX = AlsoX(scenarios=scenarios[:100])
-alsoX.solve_model()
+# alsoX = AlsoX(scenarios=scenarios[:100])
+# alsoX.solve_model()
 
-cvar = CVaR(scenarios=scenarios[:100])
-cvar.solve_model()
+# cvar = CVaR(scenarios=scenarios[:100])
+# cvar.solve_model()
 
-print(alsoX.return_c_up())        
-print(cvar.return_c_up())
+# alsox_bid = alsoX.return_c_up()
+# cvar_bid = cvar.return_c_up()
+# print(alsox_bid)        
+# print(cvar_bid)
 
-plot_freq_overbid(alsoX.return_c_up(), scenarios[:100])
-plot_freq_overbid(alsoX.return_c_up(), scenarios[100:300])
-plot_freq_overbid(cvar.return_c_up(), scenarios[:100])
-plot_freq_overbid(cvar.return_c_up(), scenarios[100:300])
+# plot_overbid(alsoX.return_c_up(), scenarios[:100])
+# plot_overbid(alsoX.return_c_up(), scenarios[100:300])
+# plot_overbid(cvar.return_c_up(), scenarios[:100])
+# plot_overbid(cvar.return_c_up(), scenarios[100:300])
+
+plot_requirement_impact_expected_shortfall([0.8, 0.85, 0.9, 0.95, 1])
