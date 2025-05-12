@@ -111,6 +111,33 @@ def plot_overbid(c_up, scenarios):
     plt.legend()
     plt.show()
 
+def plot_shortfall(c_up, scenarios):
+    shortfall_per_hour = []
+    for scenario in scenarios:
+        quantity_shortfall = sum (c_up - i for i in scenario if i < c_up)
+        shortfall_per_hour.append(quantity_shortfall)
+    plt.figure(figsize=(10, 6))
+    plt.axvline(np.mean(shortfall_per_hour), linestyle = '--', label = f'Mean shortfall: {np.mean(shortfall_per_hour):.2f} kW')
+    plt.hist(shortfall_per_hour, density = True, bins = 100)
+    plt.show()
+
+def plot_distrib(loads_list, alsox_bid, cvar_bid):
+    distrib = []
+    for loads in loads_list:
+        distrib += loads
+    #print(distrib)
+    #calculate deciles of data
+    decile = np.percentile(distrib, np.arange(0, 100, 10))
+
+    plt.axvline(alsox_bid, color = param.colors[1], linestyle = '--', label = f'ALSO-X bid: {alsox_bid} kW')
+    plt.axvline(cvar_bid, color = param.colors[3], linestyle = '--', label = f'CVaR bid: {cvar_bid:.1f} kW')
+    plt.axvline(decile[1], color = param.colors[2], linestyle = '--', label = f'First decile: {decile[1]} kW')
+    plt.hist(distrib, bins=50, color = param.colors[0], density=True)
+    plt.xlabel('Load (kW)')
+    plt.ylabel('Probability density')
+    plt.legend()
+    plt.show()
+
 
 scenarios = g.generate_scenarios()        
 
@@ -120,10 +147,14 @@ alsoX.solve_model()
 cvar = CVaR(scenarios=scenarios[:100])
 cvar.solve_model()
 
-print(alsoX.return_c_up())        
-print(cvar.return_c_up())
+alsox_bid = alsoX.return_c_up()
+cvar_bid = cvar.return_c_up()
+print(alsox_bid)        
+print(cvar_bid)
 
 plot_overbid(alsoX.return_c_up(), scenarios[:100])
 plot_overbid(alsoX.return_c_up(), scenarios[100:300])
 plot_overbid(cvar.return_c_up(), scenarios[:100])
 plot_overbid(cvar.return_c_up(), scenarios[100:300])
+plot_distrib(scenarios[:100], alsox_bid, cvar_bid)
+plot_shortfall(cvar.return_c_up(), scenarios[:100])

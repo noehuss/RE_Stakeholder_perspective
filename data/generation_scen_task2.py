@@ -17,8 +17,17 @@ def plot_distrib(loads_list):
     distrib = []
     for loads in loads_list:
         distrib += loads
-    print(distrib)
+    #print(distrib)
+    #calculate deciles of data
+    decile = np.percentile(distrib, np.arange(0, 100, 10))
+
+    plt.axvline(264, color = 'red', linestyle = '--', label = 'ALSO-X')
+    plt.axvline(244.8833, color = 'blue', linestyle = '--', label = 'CVaR')
+    plt.axvline(decile[1], color = 'orange', linestyle = '--', label = 'First decile')
     plt.hist(distrib, bins=50, density=True)
+    plt.xlabel('Load (MW)')
+    plt.ylabel('Probability density')
+    plt.legend()
     plt.show()
 
-plot_distrib(generate_scenarios()[:100])
+#plot_distrib(generate_scenarios()[:100])
