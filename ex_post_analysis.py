@@ -45,7 +45,7 @@ def out_sample_analysis(offering_strategy:OfferingStrategy, Pnom, nb_hours, nb_s
     out_sample["Profit"] = out_sample["DA profit"] + out_sample["Imbalance cost"]
 
     average_expected_profit[key] = {
-      "out_sample" : out_sample["Profit"].mean(),
+      "out_sample" : out_sample["Profit"].mean()/1000, #k€
       "in_sample" : model.get_average_profit()    
     }
     # profit_one_price = model.get_profit_distribution()
