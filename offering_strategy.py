@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from pyomo.contrib.iis import write_iis
 import numpy as np
 import param
+import time
 # setting font size
 plt.rcParams.update({'font.size': param.fontsize})
 
@@ -14,8 +15,9 @@ class OfferingStrategy():
         self.scenarios = scenarios
         self.Pnom = Pnom
         self.nb_scenarios = len(scenarios)
-
+        start = time.time()
         self.solve_model()
+        self.execution_time = time.time() - start 
 
     def indexes(self):
         self.model.hours = RangeSet(0, self.T-1) # 1 to T
@@ -63,19 +65,20 @@ class OfferingStrategy():
             hourly_profit = []
             for t in self.model.hours:
                 hourly_profit.append(value(self._profit(s,t)))
-            profit.loc[s, "Expected profit"] = sum(hourly_profit)
+            profit.loc[s, "Expected profit"] = sum(hourly_profit)/1000 #k€
 
         if plot:
             plt.hist(cumulative=True, x=profit["Expected profit"], density=True, bins=100, alpha=0.5, label='Profit distribution', color=color)
-            plt.axvline(self.get_average_profit(), color=color, linestyle='--', label='Expected profit')
-            plt.xlabel("Profit")
+            plt.axvline(self.get_average_profit(), color=color, linestyle='--', label=f'Expected profit: {self.get_average_profit():.0f} k€')
+            plt.xlabel("Profit (k€)")
             plt.ylabel("Probability")
+            plt.grid(linestyle='--', linewidth=0.4)
             plt.legend()
             plt.show()
         return profit
     
     def get_average_profit(self):
-        return value(self.model.objective)
+        return value(self.model.objective)/1000 #k€
 
     def get_p_DA(self):
         return [value(self.model.p_DA[t]) for t in self.model.hours]
@@ -123,7 +126,7 @@ class OfferingStrategyRisk(OfferingStrategy):
 
     def objective_function(self):
         self.model.objective = Objective(expr = ((1-self.beta)*(1/self.nb_scenarios)*sum(sum( self._profit(s,t)
-                                                for s in self.model.scenarios) for t in self.model.hours)+
+                                                for t in self.model.hours) for s in self.model.scenarios)+
                                                 self.beta*(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))), 
                                         sense=maximize)
 
@@ -131,7 +134,12 @@ class OfferingStrategyRisk(OfferingStrategy):
         return value((1/self.nb_scenarios)*sum(sum( self._profit(s,t) for s in self.model.scenarios) for t in self.model.hours))
 
     def get_CVaR(self):
-        return value(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))
+        if self.beta > 0:
+            return value(self.model.VaR-(1/(1-self.alpha))*(1/self.nb_scenarios)*sum(self.model.eta[s] for s in self.model.scenarios))
+        else:
+            profit_list = [value(sum(self._profit(s,t) for t in self.model.hours))  for s in self.model.scenarios]
+            first_decile = np.percentile(profit_list, (1-self.alpha)*100)
+            return np.mean([profit for profit in profit_list if profit <= first_decile])
     
     def get_VaR(self):
         return value(self.model.VaR)

@@ -1,7 +1,9 @@
+import random as rd
 import numpy as np
 import random as random
 import pandas as pd
-import ast 
+import ast
+import matplotlib.pyplot as plt
 
 def scenario_generator() -> pd.DataFrame:
     wind_condition = pd.read_csv("data/WindForecast_20250301-20250321.csv", sep=';')
@@ -173,5 +175,19 @@ def scenario_generator() -> pd.DataFrame:
                 row += 1
 
     df_scenario = df_scenario.astype('object')
-    df_scenario = df_scenario.sample(frac=1).reset_index(drop=True) #shuffle
+    df_scenario = df_scenario.sample(frac=1, random_state=2).reset_index(drop=True) #shuffle
     return df_scenario
+
+def max_profit_per_scenario_distribution_TP(df_scenario:pd.DataFrame, pnom=500):
+    max_profit = []
+    for i, row in df_scenario.iterrows():
+        max_profit.append(500*sum(np.multiply(row["Wind"], row["Price"]))/1000) #k€
+    return max_profit
+
+def max_profit_per_scenario_distribution_OP(df_scenario:pd.DataFrame, pnom=500):
+    max_profit = []
+    for i, row in df_scenario.iterrows():
+        profit_deficit = np.multiply(row["System condition"], np.multiply(pnom*1.25, np.multiply(row['Price'], row['Wind'])))
+        profit_excess = np.multiply(np.subtract(1, row['System condition']), np.multiply(row['Price'], np.multiply(pnom, np.add(0.15, row['Wind']))))
+        max_profit.append((sum(profit_deficit)+sum(profit_excess))/1000) #k€
+    return max_profit
