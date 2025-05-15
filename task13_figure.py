@@ -20,6 +20,7 @@ for offering_strategy in [OnePriceScheme, TwoPricesScheme]:
     print(average_expected_profit_df_8.describe())
     print(p_DA_df_8)
     print(p_DA_df_8.transpose().describe())
+    p_DA_df_8.transpose().describe().to_csv('results.csv')
     plt.plot(average_expected_profit_df_8['in_sample'], color=param.colors[1], label='In sample', marker='o')
     plt.plot(average_expected_profit_df_8['out_sample'], color=param.colors[2], label='Out sample', marker='^')
     plt.axhline(average_expected_profit_df_8['in_sample'].mean(), color=param.colors[1], linestyle='--', label=f'Mean In sample: {average_expected_profit_df_8['in_sample'].mean():.2f} k€')

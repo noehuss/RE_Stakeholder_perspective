@@ -175,7 +175,8 @@ def plot_requirement_impact_expected_shortfall(requirement:list[int]):
     out_sample = scenarios[100:300]
     results = {}
     c_up_results = []
-    ax = plt.subplot()
+    fig, (ax1, ax2) = plt.subplots(2,1, sharex=True, height_ratios=[2, 3])
+    
     for (i, p) in enumerate(requirement):
         alsoX = AlsoX(scenarios=in_sample, P=p)
         alsoX.solve_model()
@@ -184,9 +185,13 @@ def plot_requirement_impact_expected_shortfall(requirement:list[int]):
         c_up_results.append(c_up)
         for scenario in out_sample:
             results[f'P{i*100:.0f}'].append(sum([(c_up - i)/60 for i in scenario if i < c_up]))
-        bplot = ax.boxplot(results[f'P{i*100:.0f}'], positions=[i+1], patch_artist=False, tick_labels=[f"P{p*100:.0f}"], showmeans=True)
-    ax.set(xlabel='Requirement', ylabel='Expected reserve shortfall (kWh)')
-    ax.grid(linestyle='--', linewidth=0.4)
+        bplot = ax2.boxplot(results[f'P{i*100:.0f}'], positions=[i], patch_artist=False, tick_labels=[f"P{p*100:.0f}"], showmeans=True, **param.boxplot_style)
+    ax2.set(xlabel='Requirement', ylabel='Expected reserve shortfall (kWh)')
+    ax2.grid(linestyle='--', linewidth=0.4)
+    ax1.plot(c_up_results, marker='o', linestyle='--', color=param.colors[3])
+    ax1.set_ylabel('Reserve bid (kW)')
+    ax1.grid(linestyle='--', linewidth=0.4)
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.1)
     plt.show()
     print(c_up_results)
 

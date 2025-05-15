@@ -3,3 +3,12 @@
 colors = ["#729ECEFF", "#FF9E4AFF", "#67BF5CFF", "#ED665DFF", "#AD8BC9FF", "#A8786EFF", "#ED97CAFF", "#A2A2A2FF", "#CDCC5DFF", "#6DCCDAFF"]
 
 fontsize = 20
+
+boxplot_style = {
+    'whiskerprops': {'linewidth': 1, 'color': 'black'},
+    'medianprops': {'linewidth': 2, 'color': colors[1]},
+    'meanprops': {'marker': 'o', 'markersize': 8, 'markeredgecolor':colors[3], 'markerfacecolor':colors[3]},
+    'flierprops': {'marker': 'o', 'markersize': 5},
+    #'boxprops': {'facecolor': colors[1], 'edgecolor': 'black', 'linewidth': 1},
+    'capprops': {'color': 'black', 'linewidth': 1}
+}

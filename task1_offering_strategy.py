@@ -66,6 +66,10 @@ class OfferingStrategy():
         #self.model.write("model.lp")
 
     def get_profit_distribution(self, plot:bool=False, color:str=None) -> pd.DataFrame:
+        """
+        return in sample profit distribution
+        plot the cumulative distribution of profit
+        """
         profit = pd.DataFrame(index=self.model.scenarios, columns=["Expected profit"])
         for s in self.model.scenarios:
             hourly_profit = []
