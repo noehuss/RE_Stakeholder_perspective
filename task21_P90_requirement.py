@@ -5,6 +5,7 @@ from pyomo.contrib.iis import write_iis
 import numpy as np
 import param
 import data.generation_scen_task2 as g
+import time
 # setting font size
 plt.rcParams.update({'font.size': param.fontsize})
 
@@ -38,6 +39,7 @@ class OptimalReserveCapacity():
         self.model.objective = Objective(expr = self.model.c_up, sense = maximize)
 
     def solve_model(self):
+        start = time.time()
         self.indexes()
         self.parameters()
         self.variables()
@@ -50,6 +52,8 @@ class OptimalReserveCapacity():
         # Solve the model
         solution = solver.solve(self.model, tee=True)
         #self.model.write("model.lp")
+        execution_time = time.time() - start
+        print(f"Execution time: {execution_time}")
 
     def return_c_up(self):
         return value(self.model.c_up)
@@ -58,7 +62,6 @@ class OptimalReserveCapacity():
 class CVaR(OptimalReserveCapacity):    
     def variables(self):
         super().variables()
-        self.model.y = Var(self.model.scenarios, self.model.hours, bounds=(0,1))
         self.model.beta = Var(within = NegativeReals)
         self.model.zeta = Var(self.model.scenarios, self.model.hours, within = Reals)
         
@@ -198,20 +201,20 @@ def plot_requirement_impact_expected_shortfall(requirement:list[int]):
 
 scenarios = g.generate_scenarios()        
 
-# alsoX = AlsoX(scenarios=scenarios[:100])
-# alsoX.solve_model()
+alsoX = AlsoX(scenarios=scenarios[:100])
+alsoX.solve_model()
 
-# cvar = CVaR(scenarios=scenarios[:100])
-# cvar.solve_model()
+cvar = CVaR(scenarios=scenarios[:100])
+cvar.solve_model()
 
-# alsox_bid = alsoX.return_c_up()
-# cvar_bid = cvar.return_c_up()
-# print(alsox_bid)        
-# print(cvar_bid)
+alsox_bid = alsoX.return_c_up()
+cvar_bid = cvar.return_c_up()
+print(alsox_bid)        
+print(cvar_bid)
 
-# plot_overbid(alsoX.return_c_up(), scenarios[:100])
-# plot_overbid(alsoX.return_c_up(), scenarios[100:300])
-# plot_overbid(cvar.return_c_up(), scenarios[:100])
-# plot_overbid(cvar.return_c_up(), scenarios[100:300])
+plot_overbid(alsoX.return_c_up(), scenarios[:100])
+plot_overbid(alsoX.return_c_up(), scenarios[100:300])
+plot_overbid(cvar.return_c_up(), scenarios[:100])
+plot_overbid(cvar.return_c_up(), scenarios[100:300])
 
 plot_requirement_impact_expected_shortfall([0.8, 0.85, 0.9, 0.95, 1])

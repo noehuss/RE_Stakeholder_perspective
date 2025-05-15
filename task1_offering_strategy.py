@@ -24,6 +24,7 @@ class OfferingStrategy():
         start = time.time()
         self.solve_model()
         self.execution_time = time.time() - start 
+        print(f"Execution time: {self.execution_time}")
 
     def indexes(self):
         self.model.hours = RangeSet(0, self.T-1) # 1 to T

@@ -18,7 +18,7 @@ def risk_averse(Scheme:OfferingStrategyRisk)-> pd.DataFrame|dict|dict:
     df = pd.DataFrame(columns=['beta', 'exp profit', 'CVaR', 'VaR'])
     profit_distributions = {}
     VaRs = {}
-    for row, beta in enumerate(np.linspace(0,1,3)):
+    for row, beta in enumerate(np.linspace(0,1,6)):
         PriceScheme = Scheme(T=nb_hours, scenarios=df_scenario[0:200], Pnom=P_nom, beta=beta, alpha=alpha)
         df.loc[row, 'beta'] = beta
         df.loc[row, 'exp profit'] = PriceScheme.get_expected_profit()/1000
