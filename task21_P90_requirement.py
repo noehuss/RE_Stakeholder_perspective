@@ -173,6 +173,37 @@ def plot_distrib(loads_list, alsox_bid, cvar_bid):
     plt.legend()
     plt.show()
 
+
+def plot_expected_shortfall_CVaR_ALSOX(requirement:list[int]):
+    in_sample = scenarios[:100]
+    out_sample = scenarios[100:300]
+    results = {}
+    c_up_results = []
+    ax = plt.subplot()
+    for (i, p) in enumerate(requirement):
+        alsoX = AlsoX(scenarios=in_sample, P=p)
+        alsoX.solve_model()
+        results[f'P{i*100:.0f}'] = []
+        c_up = alsoX.return_c_up()
+        c_up_results.append(c_up)
+        for scenario in out_sample:
+            results[f'P{i*100:.0f}'].append(sum([(c_up - i)/60 for i in scenario if i < c_up]))
+        bplot = ax.boxplot(results[f'P{i*100:.0f}'], positions=[i+1], patch_artist=False, tick_labels=[f"P{p*100:.0f}-ALSO-X"], showmeans=True)
+    for (i, p) in enumerate(requirement):
+        cvar = CVaR(scenarios=in_sample, P=p)
+        cvar.solve_model()
+        results[f'P{i*100:.0f}'] = []
+        c_up = cvar.return_c_up()
+        c_up_results.append(c_up)
+        for scenario in out_sample:
+            results[f'P{i*100:.0f}'].append(sum([(c_up - i)/60 for i in scenario if i < c_up]))
+        bplot = ax.boxplot(results[f'P{i*100:.0f}'], positions=[i+2], patch_artist=False, tick_labels=[f"P{p*100:.0f}-CVaR"], showmeans=True)
+
+    ax.set(xlabel='Requirement', ylabel='Expected reserve shortfall (kWh)')
+    ax.grid(linestyle='--', linewidth=0.4)
+    plt.show()
+    print(c_up_results)
+
 def plot_requirement_impact_expected_shortfall(requirement:list[int]):
     in_sample = scenarios[:100]
     out_sample = scenarios[100:300]
@@ -212,9 +243,15 @@ cvar_bid = cvar.return_c_up()
 print(alsox_bid)        
 print(cvar_bid)
 
+# Task 2.1
 plot_overbid(alsoX.return_c_up(), scenarios[:100])
-plot_overbid(alsoX.return_c_up(), scenarios[100:300])
 plot_overbid(cvar.return_c_up(), scenarios[:100])
-plot_overbid(cvar.return_c_up(), scenarios[100:300])
 
+# Task 2.2 # Out sample analysis
+print("Out sample analysis")
+plot_overbid(alsoX.return_c_up(), scenarios[100:300])
+plot_overbid(cvar.return_c_up(), scenarios[100:300])
+plot_expected_shortfall_CVaR_ALSOX([0.9])
+
+# Task 2.3
 plot_requirement_impact_expected_shortfall([0.8, 0.85, 0.9, 0.95, 1])
